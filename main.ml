@@ -6,6 +6,14 @@ open Myuty
 open Printf
 module P = Mysql.Prepared
 
+type pmemo = {
+    name : string;
+    id   : string;
+    email : string;
+    password : string;
+    memo : string
+}
+
 let conf = read_conf "pmemo.conf" 
 
 let rec assoc s = function
@@ -29,10 +37,20 @@ let db = Mysql.quick_connect ~database:dbname
 
 let rec loop t =
   match P.fetch t with
-  | Some arr -> Array.iter (function Some s -> printf "%s " s
-                                        | None -> print_string "<NULL>") arr;
-    print_endline "";
-    loop t
+  | Some one ->
+        (printf "name = %s\n id = %s\n email = %s\n password = %s\n memo = %s\n"
+        one.name one.id one.email one.password one.memo);
+        print_endline "";
+        loop t;
   | None -> ()
+
+
+let listAll () =
+    let sql = "select * from " ^ tablename  in
+    let select = P.create db sql in
+    loop (P.execute select);
+    P.close select;
+    print_endline "done all.";
+    ()
 
 
