@@ -1,9 +1,11 @@
 #load "readfile.cmo"
 #load "myuty.cmo"
+#load "mysql.cma"
 
 open Readfile
 open Myuty
 open Printf
+open Mysql
 module P = Mysql.Prepared
 
 type pmemo = {
@@ -11,7 +13,8 @@ type pmemo = {
     id   : string;
     email : string;
     password : string;
-    memo : string
+    other : string;
+    created_at : string
 }
 
 let conf = read_conf "pmemo.conf" 
@@ -34,23 +37,44 @@ and tablename = assoc "tablename" conf
 let db = Mysql.quick_connect ~database:dbname
     ~user:username ~password:password ~host:hostname ()
 
+(*
+ * 全レコードを読む
+ * @param: c -- dbdオブジェクト
+ * @resutn: pmemo list
+ *)
+let read_table c =
+    let sql = "select * from " ^ tablename in
+    let r = exec c sql in
+    let col = column r in
+    let row x = { 
+        name       = not_null str2ml (col ~key:"name" ~row:x);
+        id         = not_null str2ml (col ~key:"id" ~row:x);
+        email      = not_null str2ml (col ~key:"email" ~row:x);
+        password   = not_null str2ml (col ~key:"password" ~row:x);
+        other      = not_null str2ml (col ~key:"other" ~row:x);
+        created_at = not_null str2ml (col ~key:"created_at" ~row:x)
+    } in
+    let rec loop = function
+        | None -> []
+        | Some x -> row x :: loop (fetch r)
+    in
+    loop (fetch r)
 
-let rec loop t =
-  match P.fetch t with
-  | Some one ->
-        (printf "name = %s\n id = %s\n email = %s\n password = %s\n memo = %s\n"
-        one.name one.id one.email one.password one.memo);
-        print_endline "";
-        loop t;
-  | None -> ()
 
+let rec disp_list = function
+    [] -> ()
+        (* | (name,id,email,password,memo) :: rest ->  *)
+        | (a : pmemo) :: rest -> 
+                printf 
+                "%-20s %-10s %-20s %-20s %-10s %-20s\n" 
+                a.name a.id a.email a.password a.other a.created_at;
+            disp_list rest    
 
 let listAll () =
-    let sql = "select * from " ^ tablename  in
-    let select = P.create db sql in
-    loop (P.execute select);
-    P.close select;
-    print_endline "done all.";
-    ()
+    let l = read_table db in
+    ignore(disp_list l); 
+        disconnect db;
+        ()
 
+let _ = listAll ()
 
