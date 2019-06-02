@@ -83,4 +83,8 @@ let disp_select_number () =
     let bango = input_line stdin in
     bango
 
-
+let rec disp_name_list = function
+    [] -> ""
+  | a :: rest ->
+          print_endline a;
+          disp_name_list rest

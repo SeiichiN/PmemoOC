@@ -118,7 +118,22 @@ let retouch n l =
     flush stdout;
     let newValue = input_line stdin in
     (one_record, field_name, newValue)
- 
+
+(* name だけをリストとして返す関数 *)
+let list_name c () =
+    let sql = "select name from " ^ tablename in
+    let r = exec c sql in
+    let col = column r in
+    let row x = ( 
+        not_null str2ml (col ~key:"name" ~row:x)
+    ) in
+    let rec loop = function
+        | None -> []
+        | Some x -> 
+                row x :: loop (fetch r)
+    in
+    loop (fetch r)
+
 
 (* データを検索する *)
 let select_data c s =
@@ -131,31 +146,36 @@ let select_data c s =
         (* print_endline (string_of_int (List.length dataList')); *)
         if (List.length dataList') > 0 (* データがあれば *)
         then 
-            begin
-                try
-                    disp_select_data dataList';
-                    let data_max = List.length dataList' in
-                    let syori_hukusu () =
-                        if data_max > 1  (* データが複数あれば *)
+            try
+                disp_select_data dataList';
+                let data_max = List.length dataList' in
+                let syori_hukusu () =
+                    if data_max > 1  (* データが複数あれば *)
+                    then
+                        (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
+                        let num = choice data_max disp_specify_data in   (* 選択画面 *)
+                        if num > 0
                         then
-                            (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
-                            let num = choice data_max disp_specify_data in   (* 選択画面 *)
-                            if num > 0
-                            then
-                                dataList := specify_data num dataList'  (* 選択する *)
-                            else 
-                                raise Out_of_loop
-                    in
-                    syori_hukusu ();
-                    disp_select_data !dataList;  (* データを表示 *)
-                    let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
-                    if n > 0 && n < 6
+                            (dataList := specify_data num dataList';  (* 選択する *)
+                            disp_select_data !dataList)  (* データを表示 *)
+                        else 
+                            raise Out_of_loop
+                    else
+                        dataList := dataList'
+                in
+                syori_hukusu ();
+                (* 「どの項目を修正しますか？ (数字で指定  0:もどる)」 *)
+                let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
+                if n > 0 && n < 6
                     then 
                         let (pmemo', fieldname, newValue) = retouch n !dataList in
                         let new_pmemo = remake_pmemo pmemo' fieldname newValue in
+                        disp_select_data [new_pmemo];
+                        print_newline ();
+                        print_endline "これでよろしいですか？";
                         ignore new_pmemo
-                with Out_of_loop -> ()
-            end
+                        (* new_pmemo をmysqlでアップデートする処理 *)
+            with Out_of_loop -> ()
         else 
             print_endline "データはありません。";
             print_endline "done.";
@@ -172,7 +192,10 @@ let edit_data () =
             let s = disp_edit_menu () in
             match s with
             "0" -> raise Out_of_loop
-            | "list" -> (); loop ()
+            | "list" -> 
+                    let data = list_name db in
+                    disp_name_list data;
+                    loop ()  (* list のときの処理 *)
             | _ -> count := 0; select_data db s
         in
     loop ()
