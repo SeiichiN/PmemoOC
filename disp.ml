@@ -74,5 +74,13 @@ let disp_specify_data () =
     print_string "どのデータを選択しますか？ (NO で指定  0:もどる) > ";
     flush stdout;
     let bango = input_line stdin in
-    (int_of_string bango)
+    bango
+
+let disp_select_number () =
+    print_newline ();
+    print_string "どの項目を修正しますか？ (数字で指定  0:もどる) > ";
+    flush stdout;
+    let bango = input_line stdin in
+    bango
+
 

@@ -21,7 +21,7 @@ let rec assoc s = function
  * @param: int max -- メニューの最大番号
  *         func f  -- 選択肢を表示し、その中から1つを選択させる関数
  *                    この関数は数字を文字列で返すようにする
- * @return: !num -- 数字
+ * @return: !num : int -- 数字
  *)
 let choice max f =
     let num = ref (max + 1) in
