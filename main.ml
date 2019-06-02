@@ -15,6 +15,8 @@ open Type
 open Disp
 module P = Mysql.Prepared
 
+exception Out_of_loop
+
 let conf = read_conf "pmemo.conf" 
 
 let rec assoc s = function
@@ -125,48 +127,75 @@ let select_data c s =
     let sql = "select * from " ^ tablename ^ " where name like ?" in
     let select = P.create db sql in
     let dataList' = select_loop (P.execute select [|ss|]) in
-    P.close select;
-    if (List.length dataList') > 0 (* データがあれば *)
-    then 
-        disp_select_data dataList';
-        let data_max = List.length dataList' in
-        let syori () =
-            if data_max > 1  (* データが複数あれば *)
-            then
-                let num = choice data_max disp_specify_data in   (* 選択画面 *)
-                dataList := specify_data num dataList'  (* 選択する *)
-            else 
-                dataList := dataList'
-        in
-        syori ();
-        disp_select_data !dataList;  (* データを表示 *)
-        let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
-        if n > 0 && n < 6
+    let syori_select () =
+        (* print_endline (string_of_int (List.length dataList')); *)
+        if (List.length dataList') > 0 (* データがあれば *)
         then 
-            let (pmemo', fieldname, newValue) = retouch n !dataList in
-            let new_pmemo = remake_pmemo pmemo' fieldname newValue in
-            ignore new_pmemo
-    else 
-        print_endline "データはありません。";
-        print_endline "done.";
-        ()
+            begin
+                try
+                    disp_select_data dataList';
+                    let data_max = List.length dataList' in
+                    let syori_hukusu () =
+                        if data_max > 1  (* データが複数あれば *)
+                        then
+                            (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
+                            let num = choice data_max disp_specify_data in   (* 選択画面 *)
+                            if num > 0
+                            then
+                                dataList := specify_data num dataList'  (* 選択する *)
+                            else 
+                                raise Out_of_loop
+                    in
+                    syori_hukusu ();
+                    disp_select_data !dataList;  (* データを表示 *)
+                    let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
+                    if n > 0 && n < 6
+                    then 
+                        let (pmemo', fieldname, newValue) = retouch n !dataList in
+                        let new_pmemo = remake_pmemo pmemo' fieldname newValue in
+                        ignore new_pmemo
+                with Out_of_loop -> ()
+            end
+        else 
+            print_endline "データはありません。";
+            print_endline "done.";
+            ()
+    in
+    syori_select ();
+    P.close select
 
 (* 検索・訂正処理 *)
 let edit_data () =
-    let s = disp_edit_menu () in
-    count := 0;
-    select_data db s
+    try
+        let rec loop () =
+            (* 「データの名前を指定してください(list:リスト表示  0:中止)」 *)
+            let s = disp_edit_menu () in
+            match s with
+            "0" -> raise Out_of_loop
+            | "list" -> (); loop ()
+            | _ -> count := 0; select_data db s
+        in
+    loop ()
+    with Out_of_loop -> ()
 
 let select_menu () =
     let n = choice 4 disp_menu in
     match n with
-    1 -> ()
-        | 2 -> edit_data ()
-        | 3 -> listAll ()
-        | 4 -> ()
-        | 0 -> print_endline "BYE."
-        | _ -> print_endline "?????"
+    1 -> (); n
+        | 2 -> edit_data (); n
+        | 3 -> listAll (); n
+        | 4 -> (); n
+        | 0 -> print_endline "BYE."; n
+        | _ -> print_endline "?????"; n
 
 
-let _ = select_menu ()
+let _ = 
+    let rec loop () =
+        let n = select_menu () in
+        if n = 0
+        then exit 0
+        else loop ()
+    in
+    loop ()
+
 
