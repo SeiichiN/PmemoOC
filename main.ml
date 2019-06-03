@@ -103,6 +103,16 @@ let rec select_loop t =
     | Some r -> 
             (arr_to_rec r) :: (select_loop t)
 
+(*
+ * MySQLでデータをアップデートする処理
+ *)
+let update_pmemo pm =
+    let sql = "update " ^ tablename ^ 
+    " set id = ?, email = ?, password = ?, other = ? where name = ?" in
+    let update = P.create db sql in
+    ignore (P.execute update [|pm.id; pm.email; pm.password; pm.other; pm.name|]);
+    P.close update
+
 (* データの修正
  * n -- int 修正する項目番号
  * l -- pmemo list 修正するデータ
@@ -120,7 +130,7 @@ let retouch n l =
     (one_record, field_name, newValue)
 
 (* name だけをリストとして返す関数 *)
-let list_name c () =
+let list_name c =
     let sql = "select name from " ^ tablename in
     let r = exec c sql in
     let col = column r in
@@ -171,10 +181,13 @@ let select_data c s =
                         let (pmemo', fieldname, newValue) = retouch n !dataList in
                         let new_pmemo = remake_pmemo pmemo' fieldname newValue in
                         disp_select_data [new_pmemo];
-                        print_newline ();
-                        print_endline "これでよろしいですか？";
-                        ignore new_pmemo
-                        (* new_pmemo をmysqlでアップデートする処理 *)
+                        let yesno = ask_yesno "これでよろしいですか？" in
+                        if yesno = "y"
+                        then
+                            (* new_pmemo をmysqlでアップデートする処理 *)
+                            update_pmemo new_pmemo
+                        else
+                            ()
             with Out_of_loop -> ()
         else 
             print_endline "データはありません。";
@@ -184,10 +197,6 @@ let select_data c s =
     syori_select ();
     P.close select
 
-
-let rec print_list = function
-    [] -> ""
-  | a :: rest -> print_endline a; print_list rest
 
 
 (* 検索・訂正処理 *)
@@ -199,9 +208,8 @@ let edit_data () =
             match s with
             "0" -> raise Out_of_loop
             | "list" -> 
-                    let data = list_name db in
-                    print_list data;
-                    (* disp_name_list data;  *)
+                    let datalist = list_name db in
+                    ignore (disp_name_list 1 datalist);
                     loop ()  (* list のときの処理 *)
             | _ -> count := 0; select_data db s
         in
@@ -223,7 +231,7 @@ let _ =
     let rec loop () =
         let n = select_menu () in
         if n = 0
-        then exit 0
+        then () (* exit 0 *)
         else loop ()
     in
     loop ()

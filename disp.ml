@@ -83,8 +83,18 @@ let disp_select_number () =
     let bango = input_line stdin in
     bango
 
-let rec disp_name_list = function
+let rec disp_name_list n = function
     [] -> ""
   | a :: rest ->
-          print_endline a;
-          disp_name_list rest
+          if (n mod 4) = 0 then print_newline ();
+          printf "%-20s " a;
+          disp_name_list (n+1) rest
+
+let ask_yesno s =
+    print_newline ();
+    print_string (s ^ " (y/n) > ");
+    flush stdout;
+    let yesno = String.lowercase_ascii (input_line stdin) in
+    if yesno = "y"
+    then "y"
+    else "n"
