@@ -186,8 +186,8 @@ let select_data c s =
 
 
 let rec print_list = function
-    [] -> ()
-  | (a) :: rest -> print_endline a; print_list rest
+    [] -> ""
+  | a :: rest -> print_endline a; print_list rest
 
 
 (* 検索・訂正処理 *)
