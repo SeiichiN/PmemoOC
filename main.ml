@@ -124,9 +124,9 @@ let list_name c () =
     let sql = "select name from " ^ tablename in
     let r = exec c sql in
     let col = column r in
-    let row x = ( 
+    let row x = (  
         not_null str2ml (col ~key:"name" ~row:x)
-    ) in
+      ) in
     let rec loop = function
         | None -> []
         | Some x -> 
@@ -184,6 +184,12 @@ let select_data c s =
     syori_select ();
     P.close select
 
+
+let rec print_list = function
+    [] -> ()
+  | (a) :: rest -> print_endline a; print_list rest
+
+
 (* 検索・訂正処理 *)
 let edit_data () =
     try
@@ -194,7 +200,8 @@ let edit_data () =
             "0" -> raise Out_of_loop
             | "list" -> 
                     let data = list_name db in
-                    disp_name_list data;
+                    print_list data;
+                    (* disp_name_list data;  *)
                     loop ()  (* list のときの処理 *)
             | _ -> count := 0; select_data db s
         in
