@@ -61,7 +61,7 @@ let print_one_data m =
     printf " 3)      email: %-50s\n" m.email;
     printf " 4)   password: %-50s\n" m.password;
     printf " 5)      other: %-50s\n" m.other;
-    printf " 6) created_at: %-20s\n" m.created_at;
+    printf "    created_at: %-20s\n" m.created_at;
     print_endline (rep "-" 38);
     print_newline ()
 

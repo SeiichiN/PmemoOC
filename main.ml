@@ -68,7 +68,7 @@ let read_table c =
 let listAll () =
     let l = read_table db in
     ignore(disp_list l); 
-    disconnect db;
+    (* disconnect db; *)
     ()
 
 (* 複数選択されたリストからひとつを選択する *)
@@ -99,7 +99,7 @@ let arr_to_rec r =
 (* mysql で得たデータから pmemo list を作る *)
 let rec select_loop t =
     match P.fetch t with
-    | None -> []
+    None -> []
     | Some r -> 
             (arr_to_rec r) :: (select_loop t)
 
@@ -141,7 +141,7 @@ let retouch n l =
     let field_value = get_field_value n one_record in
     let field_message = assoc n message_list in
     let field_name = assoc n field_list in
-    let message_str = "現在の設定： " ^ field_message ^ " = " ^ field_value in
+    let message_str = "現在の設定： " ^ field_message ^ field_value in
     print_endline message_str;
     print_string "新しい値 > ";
     flush stdout;
@@ -157,7 +157,7 @@ let list_name c =
         not_null str2ml (col ~key:"name" ~row:x)
       ) in
     let rec loop = function
-        | None -> []
+        None -> []
         | Some x -> 
                 row x :: loop (fetch r)
     in
@@ -185,25 +185,22 @@ let search_data c s =
 let select_data c s =
     let dataList' = search_data c s in
     let data_max = List.length dataList' in
-    if data_max > 0  (* データがあれば *)
-    then
-        disp_select_data dataList';
-        if data_max > 1  (* データが複数あれば *)
-        then
-            (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
-            let num = choice data_max disp_specify_data in   (* 選択画面 *)
-            if num > 0
-            then
-                let dataList = specify_data num dataList';  (* 選択する *)
-                dataList  (* 戻り値のデータリスト *)
-            else 
-                []
-        else
-            dataList'
-    else
-        print_endline "データはありません。";
-        []
+    match data_max with
+    0 ->
+        print_endline "データはありません。"; []
+        | 1 -> dataList'
+        | _ -> 
+                disp_select_data dataList';
+                (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
+                let num = choice data_max disp_specify_data in   (* 選択画面 *)
+                if num = 0
+                then
+                    []
+                else
+                    let dataList = specify_data num dataList' in  (* 選択する *)
+                    dataList  (* 戻り値のデータリスト *)
         
+(* 指定された項目を修正する *)
 let syusei dataList =
     (* 「どの項目を修正しますか？ (数字で指定  0:もどる)」 *)
     let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
@@ -219,53 +216,6 @@ let syusei dataList =
              update_pmemo new_pmemo
     else
         ()
-
-(*
-    let syori_select () =
-        (* print_endline (string_of_int (List.length dataList')); *)
-        if (List.length dataList') > 0 (* データがあれば *)
-        then 
-            try
-                disp_select_data dataList';
-                let data_max = List.length dataList' in
-                let syori_hukusu () =
-                    if data_max > 1  (* データが複数あれば *)
-                    then
-                        (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
-                        let num = choice data_max disp_specify_data in   (* 選択画面 *)
-                        if num > 0
-                        then
-                            (dataList := specify_data num dataList';  (* 選択する *)
-                            disp_select_data !dataList)  (* データを表示 *)
-                        else 
-                            raise Out_of_loop
-                    else
-                        dataList := dataList'
-                in
-                syori_hukusu ();
-                (* 「どの項目を修正しますか？ (数字で指定  0:もどる)」 *)
-                let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
-                if n > 0 && n < 6
-                    then 
-                        let (pmemo', fieldname, newValue) = retouch n !dataList in
-                        let new_pmemo = remake_pmemo pmemo' fieldname newValue in
-                        disp_select_data [new_pmemo];
-                        let yesno = ask_yesno "これでよろしいですか？" in
-                        if yesno = "y"
-                        then
-                            (* new_pmemo をmysqlでアップデートする処理 *)
-                            update_pmemo new_pmemo
-                        else
-                            ()
-            with Out_of_loop -> ()
-        else 
-            print_endline "データはありません。";
-            print_endline "done.";
-            ()
-    in
-    syori_select ();
-    P.close select
-*)
 
 
 (* 検索・訂正処理 *)
@@ -283,6 +233,7 @@ let edit_data () =
             | _ ->
                     count := 0;
                     let l = select_data db s in
+                    disp_select_data l;
                     syusei l
         in
         loop ()
@@ -300,7 +251,7 @@ let insert_data () =
     else
       ()
   in
-  insert_syori ();
+  insert_syori ()
 
 
 let select_menu () =
@@ -318,7 +269,7 @@ let _ =
     let rec loop () =
         let n = select_menu () in
         if n = 0
-        then () (* exit 0 *)
+        then ( disconnect db; ()) (* exit 0 *)
         else loop ()
     in
     loop ()
