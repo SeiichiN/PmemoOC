@@ -4,6 +4,7 @@
 
 open Type
 open Printf
+open Myuty
 
 (*
  * 与えられた文字列を繰り返し表示する関数
@@ -55,11 +56,12 @@ let print_one_data m =
     print_newline ();
     print_endline ( (rep "-" 15) ^ " データ " ^ (rep "-" 15) );
     printf " NO: %-4d\n"     m.no;
-    printf " 1)     name: %-50s\n" m.name;
-    printf " 2)       id: %-50s\n" m.id;
-    printf " 3)    email: %-50s\n" m.email;
-    printf " 4) password: %-50s\n" m.password;
-    printf " 5)    other: %-50s\n" m.other;
+    printf " 1)       name: %-50s\n" m.name;
+    printf " 2)         id: %-50s\n" m.id;
+    printf " 3)      email: %-50s\n" m.email;
+    printf " 4)   password: %-50s\n" m.password;
+    printf " 5)      other: %-50s\n" m.other;
+    printf " 6) created_at: %-20s\n" m.created_at;
     print_endline (rep "-" 38);
     print_newline ()
 
@@ -98,3 +100,28 @@ let ask_yesno s =
     if yesno = "y"
     then "y"
     else "n"
+
+let make_new_pmemo () =
+  print_newline ();
+  print_endline ( (rep "-" 15) ^ " 新規データ作成 " ^ (rep "-" 15) );
+  print_newline ();
+  let temp_name = get_user_input "name > "
+  and temp_id = get_user_input "id > "
+  and temp_email = get_user_input "email > "
+  and temp_password = get_user_input "password > "
+  and temp_other = get_user_input "other > " in
+  let new_pmemo = {
+    no = 0;
+    name = temp_name;
+    id = temp_id;
+    email = temp_email;
+    password = temp_password;
+    other = temp_other;
+    created_at = ""
+  } in
+  new_pmemo
+
+
+
+
+

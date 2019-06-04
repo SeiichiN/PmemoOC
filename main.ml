@@ -104,6 +104,16 @@ let rec select_loop t =
             (arr_to_rec r) :: (select_loop t)
 
 (*
+ * MySQLでデータをインサートする処理
+ *)
+let insert_pmemo pm =
+  let sql = "insert into " ^ tablename ^ " (name, id, email, password, other) values (?, ?, ?, ?, ?)" in
+  let insert = P.create db sql in
+  ignore (P.execute insert [|pm.name; pm.id; pm.email; pm.password; pm.other|]);
+  P.close insert
+
+
+(*
  * MySQLでデータをアップデートする処理
  *)
 let update_pmemo pm =
@@ -112,6 +122,15 @@ let update_pmemo pm =
     let update = P.create db sql in
     ignore (P.execute update [|pm.id; pm.email; pm.password; pm.other; pm.name|]);
     P.close update
+
+(*
+ * MySQLでデータを削除する処理
+ *)
+let delete_pmemo name =
+  let sql = "delete from " ^ tablename ^ " where name = ?" in
+  let delete = P.create db sql in
+  ignore (P.execute delete [|name|]);
+  P.close delete
 
 (* データの修正
  * n -- int 修正する項目番号
@@ -216,15 +235,30 @@ let edit_data () =
     loop ()
     with Out_of_loop -> ()
 
+(* 追加処理 *)
+let insert_data () =
+  let new_pmemo = make_new_pmemo () in
+  disp_select_data [new_pmemo];
+  let insert_syori () =
+    let yesno = ask_yesno "これでよろしいですか？" in
+    if yesno = "y"
+    then
+      insert_pmemo new_pmemo
+    else
+      ()
+  in
+  insert_syori ();
+
+
 let select_menu () =
     let n = choice 4 disp_menu in
     match n with
-    1 -> (); n
-        | 2 -> edit_data (); n
-        | 3 -> listAll (); n
-        | 4 -> (); n
-        | 0 -> print_endline "BYE."; n
-        | _ -> print_endline "?????"; n
+        0 -> print_endline "bye."; n
+      | 1 -> insert_data (); n
+      | 2 -> edit_data (); n
+      | 3 -> listAll (); n
+      | 4 -> (); n
+      | _ -> print_endline "?????"; n
 
 
 let _ = 

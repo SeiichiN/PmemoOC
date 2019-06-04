@@ -37,3 +37,14 @@ let choice max f =
     done;
     !num
 
+(*
+ * ユーザーからの入力を受け取る処理
+ * @param: s : string -- 画面に表示する文字列
+ *)
+let get_user_input s =
+  print_string s;
+  flush stdout;
+  let str = input_line stdin in
+  str
+
+
