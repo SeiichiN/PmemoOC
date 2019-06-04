@@ -17,7 +17,7 @@ let rec assoc s = function
             else assoc s rest
 
 (*
- * choice -- 選択肢の中から一つを選ぶ関数
+ * choice -- 選択肢の中から一つを選ぶ関数 (0 ... max)
  * @param: int max -- メニューの最大番号
  *         func f  -- 選択肢を表示し、その中から1つを選択させる関数
  *                    この関数は数字を文字列で返すようにする

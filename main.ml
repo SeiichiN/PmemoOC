@@ -163,14 +163,64 @@ let list_name c =
     in
     loop (fetch r)
 
-
-(* データを検索する *)
-let select_data c s =
-    let dataList = ref [] in
+(*
+ * MySQLで検索のsqlを実行する
+ * @param: c : dbd -- データベース接続オブジェクト
+ *         s : string 検索文字列 ここでは name で検索する
+ * @return: dataList -- pmemo list (複数の可能性がある)
+ *)
+let search_data c s =
     let ss = "%" ^ s ^ "%" in
     let sql = "select * from " ^ tablename ^ " where name like ?" in
     let select = P.create db sql in
-    let dataList' = select_loop (P.execute select [|ss|]) in
+    let dataList = select_loop (P.execute select [|ss|]) in
+    P.close select;
+    dataList
+
+
+(*
+ * データを検索する
+ * データリストが複数ある場合、ひとつに絞る
+ *)
+let select_data c s =
+    let dataList' = search_data c s in
+    let data_max = List.length dataList' in
+    if data_max > 0  (* データがあれば *)
+    then
+        disp_select_data dataList';
+        if data_max > 1  (* データが複数あれば *)
+        then
+            (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
+            let num = choice data_max disp_specify_data in   (* 選択画面 *)
+            if num > 0
+            then
+                let dataList = specify_data num dataList';  (* 選択する *)
+                dataList  (* 戻り値のデータリスト *)
+            else 
+                []
+        else
+            dataList'
+    else
+        print_endline "データはありません。";
+        []
+        
+let syusei dataList =
+    (* 「どの項目を修正しますか？ (数字で指定  0:もどる)」 *)
+    let n = choice 5 disp_select_number in  (* 修正する項目を番号で選択 *)
+    if n > 0 && n < 6
+    then 
+        let (pmemo', fieldname, newValue) = retouch n dataList in
+        let new_pmemo = remake_pmemo pmemo' fieldname newValue in
+        disp_select_data [new_pmemo];
+        let yesno = ask_yesno "これでよろしいですか？" in
+        if yesno = "y"
+        then
+            (* new_pmemo をmysqlでアップデートする処理 *)
+             update_pmemo new_pmemo
+    else
+        ()
+
+(*
     let syori_select () =
         (* print_endline (string_of_int (List.length dataList')); *)
         if (List.length dataList') > 0 (* データがあれば *)
@@ -215,7 +265,7 @@ let select_data c s =
     in
     syori_select ();
     P.close select
-
+*)
 
 
 (* 検索・訂正処理 *)
@@ -230,9 +280,12 @@ let edit_data () =
                     let datalist = list_name db in
                     ignore (disp_name_list 1 datalist);
                     loop ()  (* list のときの処理 *)
-            | _ -> count := 0; select_data db s
+            | _ ->
+                    count := 0;
+                    let l = select_data db s in
+                    syusei l
         in
-    loop ()
+        loop ()
     with Out_of_loop -> ()
 
 (* 追加処理 *)
