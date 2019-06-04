@@ -218,7 +218,7 @@ let syusei dataList =
         ()
 
 
-(* 検索・訂正処理 *)
+(* 検索処理 *)
 let edit_data () =
     try
         let rec loop () =
@@ -253,6 +253,8 @@ let insert_data () =
   in
   insert_syori ()
 
+let delete_data () =
+    ()
 
 let select_menu () =
     let n = choice 4 disp_menu in

@@ -48,3 +48,15 @@ let get_user_input s =
   str
 
 
+(*
+ * メッセージを表示して、番号を得る関数
+ * @param: s : string -- 画面に表示する文字列
+ * @return: bango : string -- 番号
+ *)
+let disp_mes_get_bango s =
+    print_newline ();
+    print_string s;
+    flush stdout;
+    let bango = input_line stdin in
+    bango
+

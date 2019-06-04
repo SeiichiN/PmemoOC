@@ -44,7 +44,7 @@ let disp_menu () =
 
 let disp_edit_menu () =
     print_newline ();
-    print_endline ( (rep "-" 15) ^ " データの検索・訂正 " ^ (rep "-" 15) );
+    print_endline ( (rep "-" 15) ^ " データの検索 " ^ (rep "-" 15) );
     print_newline ();
     print_string "データの名前を指定してください (list:リスト表示  0:中止) > ";
     flush stdout;
@@ -71,19 +71,19 @@ let rec disp_select_data = function
           print_one_data m;
           disp_select_data rest
 
+
 let disp_specify_data () =
-    print_newline ();
-    print_string "どのデータを選択しますか？ (NO で指定  0:もどる) > ";
-    flush stdout;
-    let bango = input_line stdin in
+    let bango = disp_mes_get_bango "どのデータを選択しますか？ (NO で指定  0:もどる) > " in
     bango
 
 let disp_select_number () =
-    print_newline ();
-    print_string "どの項目を修正しますか？ (数字で指定  0:もどる) > ";
-    flush stdout;
-    let bango = input_line stdin in
+    let bango =  disp_mes_get_bango "どの項目を修正しますか？ (数字で指定  0:もどる) > " in
     bango
+
+let disp_edit_or_delete () =
+    let bango =  disp_mes_get_bango "1:訂正  2:削除  0:もどる > " in
+    bango
+    
 
 let rec disp_name_list n = function
     [] -> ""
