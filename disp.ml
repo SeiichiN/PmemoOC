@@ -42,7 +42,7 @@ let disp_menu () =
     let bango = input_line stdin in
     bango
 
-let disp_edit_menu () =
+let disp_search_menu () =
     print_newline ();
     print_endline ( (rep "-" 15) ^ " データの検索 " ^ (rep "-" 15) );
     print_newline ();
@@ -71,15 +71,17 @@ let rec disp_select_data = function
           print_one_data m;
           disp_select_data rest
 
-
+(* @return: bango : string *)
 let disp_specify_data () =
     let bango = disp_mes_get_bango "どのデータを選択しますか？ (NO で指定  0:もどる) > " in
     bango
 
+(* @return: bango : string *)
 let disp_select_number () =
     let bango =  disp_mes_get_bango "どの項目を修正しますか？ (数字で指定  0:もどる) > " in
     bango
 
+(* @return: bango : string *)
 let disp_edit_or_delete () =
     let bango =  disp_mes_get_bango "1:訂正  2:削除  0:もどる > " in
     bango

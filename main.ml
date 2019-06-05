@@ -1,11 +1,15 @@
 (*
  * main.ml
+ *
+ * ocamlfind ocamlopt -o pmemo -linkpkg -package mysql,str type.ml myuty.ml readfile.ml disp.ml main.ml
  *)
+(*
 #load "readfile.cmo"
 #load "myuty.cmo"
 #load "mysql.cma"
 #load "type.cmo"
 #load "disp.cmo"
+*)
 
 open Readfile
 open Myuty
@@ -115,6 +119,8 @@ let insert_pmemo pm =
 
 (*
  * MySQLでデータをアップデートする処理
+ * @param: pm : pmemo -- レコード型
+ * @return: ()
  *)
 let update_pmemo pm =
     let sql = "update " ^ tablename ^ 
@@ -125,6 +131,8 @@ let update_pmemo pm =
 
 (*
  * MySQLでデータを削除する処理
+ * @param: name : string -- 削除したいデータの name
+ * @return: ()
  *)
 let delete_pmemo name =
   let sql = "delete from " ^ tablename ^ " where name = ?" in
@@ -135,6 +143,7 @@ let delete_pmemo name =
 (* データの修正
  * n -- int 修正する項目番号
  * l -- pmemo list 修正するデータ
+ * @return: (pmemo, string, string)
  *)
 let retouch n l =
     let one_record = List.hd l in    (* この時点ではリストは一つである *)
@@ -186,19 +195,19 @@ let select_data c s =
     let dataList' = search_data c s in
     let data_max = List.length dataList' in
     match data_max with
-    0 ->
-        print_endline "データはありません。"; []
+          0 ->
+            print_endline "データはありません。"; []
         | 1 -> dataList'
         | _ -> 
-                disp_select_data dataList';
-                (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
-                let num = choice data_max disp_specify_data in   (* 選択画面 *)
-                if num = 0
-                then
-                    []
-                else
-                    let dataList = specify_data num dataList' in  (* 選択する *)
-                    dataList  (* 戻り値のデータリスト *)
+            disp_select_data dataList';
+            (* 「どのデータを選択しますか？ (NOで指定  0:もどる)」 *)
+            let num = choice data_max disp_specify_data in   (* 選択画面 *)
+            if num = 0
+            then
+                []
+            else
+                let dataList = specify_data num dataList' in  (* 選択する *)
+                dataList  (* 戻り値のデータリスト *)
         
 (* 指定された項目を修正する *)
 let syusei dataList =
@@ -217,13 +226,32 @@ let syusei dataList =
     else
         ()
 
+(* 指定されたリストを削除する *)
+let delete_data l =
+  let yesno = ask_yesno "本当によろしいですか？" in
+  if yesno = "y"
+  then
+    let m = List.hd l in
+    delete_pmemo m.name
+  else
+    ()
+
+
+(* 訂正か削除か処理を分岐 *)
+let edit_or_delete l =
+  let num = int_of_string (disp_edit_or_delete ()) in
+  match num with
+  0 -> ()
+  | 1 -> syusei l  (* ()  *)
+  | 2 -> delete_data l (*  ()  *)
+  | _ -> ()
 
 (* 検索処理 *)
-let edit_data () =
+let kensaku_data () =
     try
         let rec loop () =
             (* 「データの名前を指定してください(list:リスト表示  0:中止)」 *)
-            let s = disp_edit_menu () in
+            let s = disp_search_menu () in
             match s with
             "0" -> raise Out_of_loop
             | "list" -> 
@@ -234,7 +262,7 @@ let edit_data () =
                     count := 0;
                     let l = select_data db s in
                     disp_select_data l;
-                    syusei l
+                    edit_or_delete l
         in
         loop ()
     with Out_of_loop -> ()
@@ -253,17 +281,16 @@ let insert_data () =
   in
   insert_syori ()
 
-let delete_data () =
-    ()
+
 
 let select_menu () =
     let n = choice 4 disp_menu in
     match n with
         0 -> print_endline "bye."; n
       | 1 -> insert_data (); n
-      | 2 -> edit_data (); n
+      | 2 -> kensaku_data (); n
       | 3 -> listAll (); n
-      | 4 -> (); n
+      | 4 -> kensaku_data (); n
       | _ -> print_endline "?????"; n
 
 
