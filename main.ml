@@ -3,13 +3,11 @@
  *
  * ocamlfind ocamlopt -o pmemo -linkpkg -package mysql,str type.ml myuty.ml readfile.ml disp.ml main.ml
  *)
-(*
 #load "readfile.cmo"
 #load "myuty.cmo"
 #load "mysql.cma"
 #load "type.cmo"
 #load "disp.cmo"
-*)
 
 open Readfile
 open Myuty
@@ -232,7 +230,9 @@ let delete_data l =
   if yesno = "y"
   then
     let m = List.hd l in
-    delete_pmemo m.name
+    delete_pmemo m.name;
+    print_newline ();
+    print_endline "削除しました。"
   else
     ()
 
