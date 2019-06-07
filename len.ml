@@ -74,8 +74,9 @@ let rec rep s n =
  *    2 -- utf-8 の 2バイトめ
  *    3 -- utf-8 の 3バイトめ
  *)
+let tt = ref 0
+
 let char_check c =
-    sw := false;
     let kekka = ref 0 in
     let check1 () =
         if (Char.code c) >= 227 && !sw = false
@@ -83,16 +84,20 @@ let char_check c =
         else kekka := 0
     in
     let check2 () =
-        if !sw = true
+        if (!sw) 
         then 
-            t := !t + 1;
-            kekka := !t
+            (tt := !tt + 1;
+            print_endline "TRUE";
+            print_endline ("tt= " ^ (string_of_int !tt));
+            kekka := !tt)
+        else
+            print_endline "FALSE"
     in
     let check3 () =
-        if !sw = true && !t = 3
+        if !sw = true && !tt = 3
         then
             sw := false;
-            t := 0
+            tt := 0
     in
     check1 ();
     check2 ();
@@ -131,6 +136,7 @@ let mbsubstr s n =
      *)
     let mkstr c =
         let keta = str_count c in
+(*        print_endline ("keta= " ^ (string_of_int keta));  *)
         let moji = Char.escaped c in
         let check1 () =
             if keta = 1
