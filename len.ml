@@ -2,7 +2,7 @@
  * len.ml -- 文字列の長さを取得する
  *)
 let s1 = "google";;
-let s2 = "itソリューション";;
+let s2 = "itソリ";;
 let s3 = "大阪市立図書館";;
 
 (* あ -- \227 \129 \130
@@ -68,7 +68,7 @@ let rec rep s n =
 (*
  * char文字が1バイト文字か utf-8かをチェックし、
  * その結果を返す
- * @return:
+ * @return: !kekka : int
  *    0 -- 1バイト文字
  *    1 -- utf-8 の 1バイトめ
  *    2 -- utf-8 の 2バイトめ
@@ -84,24 +84,23 @@ let char_check c =
         else kekka := 0
     in
     let check2 () =
-        if (!sw) 
+        if !sw 
         then 
             (tt := !tt + 1;
-            print_endline "TRUE";
-            print_endline ("tt= " ^ (string_of_int !tt));
             kekka := !tt)
-        else
-            print_endline "FALSE"
+        else ()
     in
     let check3 () =
         if !sw = true && !tt = 3
-        then
+        then ( 
             sw := false;
-            tt := 0
+            tt := 0 )
+        else ()
     in
     check1 ();
     check2 ();
     check3 ();
+    print_endline ("c= " ^ (Char.escaped c) ^ " " ^ (string_of_int !kekka));
     !kekka
 
 
@@ -111,9 +110,7 @@ let char_check c =
  * 文字列s は、n文字分以上の長さがあるものとする
  *)
 let mbsubstr s n =
-    let ans = ref ""
-    and len = ref 0
-    and z_moji = ref "" in
+    (* sw := false; *) (* char_check の sw  *)
     (*
      * 1char文字 c を受け取って、もし 1バイト文字なら 1 を
      * utf-8 の 3バイトめ なら 2 を返す
@@ -128,37 +125,33 @@ let mbsubstr s n =
             else 0
     in
     (*
-     * Char文字 c を受け取って、
-     * str_count（桁数）が
-     *   1 -- ans 文字列に c を追加
-     *   2 -- ans 文字列に z_moji を追加
-     *   0 -- z_moji に c を追加
+     * 与えられた n という桁数を
+     * 1バイト文字なら 1 
+     * 3バイト文字なら 3　というふうに換算して
+     * 新しい n2 というバイト文字数に変換する
+     * String.sub s n2
      *)
-    let mkstr c =
-        let keta = str_count c in
-(*        print_endline ("keta= " ^ (string_of_int keta));  *)
-        let moji = Char.escaped c in
-        let check1 () =
-            if keta = 1
-            then ans := !ans ^ moji
-            else
-                if keta = 2
-                then ans := !z_moji ^ moji
-                else z_moji := moji
+    let get_new_n x =
+        let i = ref 0 in
+        let rec loop n2 x =
+            let byte_nth = (str_count s.[!i]) in (* utf-8 なら何バイトめか *)(* その文字の画面表示に必要な桁数 *)
+            print_endline ("byte_nth= " ^ (string_of_int byte_nth));
+            let keta =
+                if byte_nth = 0 then 1
+                else
+                    if byte_nth = 3 then 2 else 0
+            in
+            if x = 0 then (print_endline ("n2= " ^ (string_of_int n2)); n2)
+            else (
+                i := !i + 1;
+                if byte_nth = 0
+                then  loop (n2 + 1) (x - keta)
+                else loop (n2 + byte_nth) (x - keta)  (* n2 = 必要なバイト数 *)
+            )
         in
-        let keta_check () =
-            if keta = 0 then let keta' = 2 in keta'
-            else let keta' = keta in keta'
-        in
-        let keta' = keta_check() in
-        len := !len + keta';
-        if !len <= n then check1 ()
-        else ()
+        loop 0 x
     in
-    String.iter (fun x -> mkstr x) s;
-    !ans
-
-
+    String.sub s 0 (get_new_n n)
 
 
 (*
@@ -170,10 +163,11 @@ let mbsubstr s n =
  *)
 let show_length s l =
     let moji = ref "" in
-    if (mblength s) < l
-    then (moji := s ^ (rep " " (l - (mblength s))); !moji)
+    let s_length = mblength s in
+    if s_length < l
+    then (moji := s ^ (rep " " (l - s_length)); !moji)
     else
-        if (mblength s) = l
+        if s_length = l
         then s
         else mbsubstr s l
 
