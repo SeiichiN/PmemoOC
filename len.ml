@@ -1,5 +1,17 @@
 (*
  * len.ml -- 文字列の長さを取得する
+ *
+ * han_length s -- string -> int 
+ *                 文字列s 中の半角文字数を求める。
+ * zen_length s -- string -> int
+ *                 文字列s 中の全角文字数を求める。
+ * mblength s   -- string -> int
+ *                 文字列s 中の半角文字数 + 全角文字数 * 2 を求める。
+ *                 つまり、画面に表示される桁数を求める。
+ * show_length s n -- string -> int -> string
+ *                 文字列s を n桁 で表示する。
+ *                 もし、文字列s が、n桁よりも小さければ、空白で埋める。
+ *                 もし、文字列s が、n桁よりも大きければ、その分を削除する。
  *)
 let s1 = "google";;
 let s2 = "itソリ";;
@@ -10,120 +22,96 @@ let s3 = "大阪市立図書館";;
  * 　 -- \227 \128 \128 (全角空白)
  *)
 
-let t = ref 0  (* swがtrue になって3バイトまでを数えるため *)
-let n = ref 0
-let zen = ref 0
-let sw = ref false 
+(*
+ * 半角文字数を求める関数
+ *)
+let han_length s =
+    let rec loop n x sw =
+        if n = (String.length s) then x
+        else
+            let c = s.[n] in
+            if (Char.code c) >= 227
+            then loop (n+1) x (sw+1)
+            else
+                match sw with
+                    0 -> loop (n+1) (x+1) sw
+                    | 3 -> loop (n+1) x 0
+                    | _ -> loop (n+1) x (sw+1)
+    in
+    loop 0 0 0
 
 (*
- * 総バイト数と総全角文字バイト数を求める関数
- * n -- バイト数
- * zen -- 全角文字のバイト数
+ * 全角文字数を求める関数
  *)
-let count x =
-  n := !n + 1; 
-  let check1 () =
-    if (Char.code x) >= 227
-    then ( sw := true )
-    else ()
-  in
-  check1 ();
-  let check2 () =
-    if !sw = true
-    then (
-      t := !t + 1;
-      zen := !zen + 1 )
-    else ()
-  in
-  check2 ();
-  let check3 () =
-    if !t = 3
-    then (sw := false; t := 0 )
-    else ()
-  in
-  check3 ()
+let zen_length s =
+    let rec loop n x sw =
+        if n = String.length s then x
+        else
+            let c = s.[n] in
+            if (Char.code c) >= 227
+            then loop (n+1) (x+1) (sw+1)
+            else
+                match sw with
+                    0 -> loop (n+1) x sw
+                    | 3 -> loop (n+1) (x+1) 0
+                    | _ -> loop (n+1) x (sw+1)
+    in
+    loop 0 0 0
 
 
 (*
  * 半角文字数 + 全角文字数 * 2 を求める関数
  *)
 let mblength s =
-  sw := false;
-  n := 0;
-  zen := 0;
-  t := 0;
-  String.iter (fun x -> count x) s;
-  let han_len = !n - !zen in
-  let zen_len = !zen / 3 in
-  Printf.printf "半角文字バイト数 = %d\n" han_len;
-  Printf.printf "全角文字バイト数 = %d\n" zen_len;
-  han_len + zen_len * 2
+    (han_length s) + (zen_length s) * 2
+
 
 (*
- * n 個の連続した s を求める関数
- *)
-let rec rep s n =
-    s ^ (rep s (n-1))
-
-(*
- * char文字が1バイト文字か utf-8かをチェックし、
- * その結果を返す
- * @return: !kekka : int
+ * 文字列の各文字が1バイト文字か utf-8かをチェックし、
+ * その結果をリストで返す
+ * @return: int list
+ *    (例)
+ *    "itコム" -- [0; 0; 1; 2; 3; 1; 2; 3]
  *    0 -- 1バイト文字
  *    1 -- utf-8 の 1バイトめ
  *    2 -- utf-8 の 2バイトめ
  *    3 -- utf-8 の 3バイトめ
  *)
-let tt = ref 0
-
-let char_check c =
-    let kekka = ref 0 in
-    let check1 () =
-        if (Char.code c) >= 227 && !sw = false
-        then sw := true
-        else kekka := 0
-    in
-    let check2 () =
-        if !sw 
-        then 
-            (tt := !tt + 1;
-            kekka := !tt)
-        else ()
-    in
-    let check3 () =
-        if !sw = true && !tt = 3
-        then ( 
-            sw := false;
-            tt := 0 )
-        else ()
-    in
-    check1 ();
-    check2 ();
-    check3 ();
-    print_endline ("c= " ^ (Char.escaped c) ^ " " ^ (string_of_int !kekka));
-    !kekka
-
+exception Coming_3
+let mbcheck s =
+    try
+        let rec loop n sw x =
+            if n = String.length s then List.rev x
+            else
+                let c = (Char.code s.[n]) in
+                if c >= 227 && sw = 0
+                then loop (n+1) (sw+1) (1::x) 
+                else
+                    match sw with
+                        0 -> loop (n+1) (sw) (0::x)
+                        | 1 -> loop (n+1) (sw+1) (2::x)
+                        | 2 -> loop (n+1) 0 (3::x)
+                        | _ -> raise Coming_3
+        in
+        loop 0 0 []
+    with Coming_3 -> print_endline "Coming_3"; []
 
 
 (*
- * 文字列s を先頭から n文字分切り取った文字列を求める関数
+ * 文字列s を先頭v から n文字分切り取った文字列を求める関数
  * 文字列s は、n文字分以上の長さがあるものとする
+ * @param:
+ *    s : string -- 対象となる文字列
+ *    v : int    -- スタート位置
+ *                （0 を想定している。他はまだ考えていない）
+ *    n : int    -- 表示したい桁数
+ * @return: 文字列
+ *    画面上では全角文字は、1文字につき、1バイト文字2桁分を必要とする。
+ *    String.sub s v n の場合、画面上で全角文字を4桁で表示したいとする
+ *    なら、n には、6文字分を与えなければならない。
+ *    すなわち、String.sub s 0 5 となる。
  *)
-let mbsubstr s n =
-    (* sw := false; *) (* char_check の sw  *)
-    (*
-     * 1char文字 c を受け取って、もし 1バイト文字なら 1 を
-     * utf-8 の 3バイトめ なら 2 を返す
-     * utf-8 の 1バイトめ、2バイトめなら、0 をかえす
-     * つまり、画面上に占有する桁数を返す
-     *)
-    let str_count c =
-        let m = char_check c in
-        if m = 0 then 1
-        else
-            if m = 3 then 2
-            else 0
-    in
+let mbsubstr s v n =
     (*
      * 与えられた n という桁数を
      * 1バイト文字なら 1 
@@ -132,27 +120,30 @@ let mbsubstr s n =
      * String.sub s n2
      *)
     let get_new_n x =
-        let i = ref 0 in
-        let rec loop n2 x =
-            let byte_nth = (str_count s.[!i]) in (* utf-8 なら何バイトめか *)(* その文字の画面表示に必要な桁数 *)
-            print_endline ("byte_nth= " ^ (string_of_int byte_nth));
-            let keta =
-                if byte_nth = 0 then 1
-                else
-                    if byte_nth = 3 then 2 else 0
-            in
-            if x = 0 then (print_endline ("n2= " ^ (string_of_int n2)); n2)
-            else (
-                i := !i + 1;
-                if byte_nth = 0
-                then  loop (n2 + 1) (x - keta)
-                else loop (n2 + byte_nth) (x - keta)  (* n2 = 必要なバイト数 *)
-            )
+        let ml = mbcheck s in
+        let rec loop n2 x l = 
+            if x = 0 then n2
+            else
+                match l with
+                    [] -> n2
+                    | a :: rest ->
+                        match a with
+                            0 -> loop (n2 + 1) (x-1) rest
+                            | 3 -> loop (n2 + 1) (x-2) rest
+                            | _ -> loop (n2 + 1) x rest
         in
-        loop 0 x
+        loop 0 x ml
     in
-    String.sub s 0 (get_new_n n)
+    String.sub s v (get_new_n n)
 
+
+(*
+ * n 個の連続した s を求める関数
+ *)
+let rec rep s n =
+    if n = 0 then s
+    else
+        s ^ (rep s (n-1))
 
 (*
  * 決められた文字数で文字列を表示する
@@ -162,12 +153,11 @@ let mbsubstr s n =
  *                    サイズの小さな文字列は空白で埋めることとする
  *)
 let show_length s l =
-    let moji = ref "" in
     let s_length = mblength s in
     if s_length < l
-    then (moji := s ^ (rep " " (l - s_length)); !moji)
+    then s ^ (rep " " (l - s_length))
     else
         if s_length = l
         then s
-        else mbsubstr s l
+        else mbsubstr s 0 l
 
