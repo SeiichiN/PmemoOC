@@ -6,4 +6,6 @@ doc
 *.cmx
 *.o
 pmemo
-
+*.conflict.ml
+*.bak
+bak
