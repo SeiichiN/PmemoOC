@@ -117,6 +117,7 @@ let mbsubstr s n =
      * utf-8 の 1バイトめ、2バイトめなら、0 をかえす
      * つまり、画面上に占有する桁数を返す
      *)
+    (*
     let str_count c =
         let m = char_check c in
         if m = 0 then 1
@@ -124,6 +125,7 @@ let mbsubstr s n =
             if m = 3 then 2
             else 0
     in
+    *)
     (*
      * 与えられた n という桁数を
      * 1バイト文字なら 1 
@@ -134,13 +136,14 @@ let mbsubstr s n =
     let get_new_n x =
         let i = ref 0 in
         let rec loop n2 x =
-            let byte_nth = (str_count s.[!i]) in (* utf-8 なら何バイトめか *)(* その文字の画面表示に必要な桁数 *)
+            let byte_nth = (char_check s.[!i]) in (* utf-8 なら何バイトめか *)(* その文字の画面表示に必要な桁数 *)
             print_endline ("byte_nth= " ^ (string_of_int byte_nth));
             let keta =
                 if byte_nth = 0 then 1
                 else
                     if byte_nth = 3 then 2 else 0
             in
+            print_endline ("keta= " ^ (string_of_int keta));
             if x = 0 then (print_endline ("n2= " ^ (string_of_int n2)); n2)
             else (
                 i := !i + 1;
