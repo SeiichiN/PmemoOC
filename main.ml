@@ -8,6 +8,7 @@
 #load "mysql.cma"
 #load "type.cmo"
 #load "disp.cmo"
+#load "len.cmo"
 
 open Readfile
 open Myuty

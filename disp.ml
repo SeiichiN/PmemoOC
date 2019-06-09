@@ -5,6 +5,7 @@
 open Type
 open Printf
 open Myuty
+open Len
 
 (*
  * 与えられた文字列を繰り返し表示する関数
@@ -20,8 +21,14 @@ let rec disp_list = function
     [] -> ()
     | (a : pmemo) :: rest -> 
             printf 
-            "%4d %-20s %-10s %-20s %-20s %-10s %-20s\n" 
-            a.no a.name a.id a.email a.password a.other a.created_at;
+            "%4d %20s %10s %20s %20s %10s %20s\n" 
+            a.no
+            (show_length a.name 20)
+            (show_length a.id 10)
+            (show_length a.email 20)
+            (show_length a.password 20)
+            (show_length a.other 10)
+            (show_length a.created_at 20);
             disp_list rest    
 
 let disp_menu () =
@@ -91,7 +98,7 @@ let rec disp_name_list n = function
     [] -> ""
   | a :: rest ->
           if (n mod 4) = 0 then print_newline ();
-          printf "%-20s " a;
+          printf "%-20s " (show_length a 20);
           disp_name_list (n+1) rest
 
 let ask_yesno s =

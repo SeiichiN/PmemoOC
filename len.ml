@@ -16,6 +16,7 @@
 let s1 = "google";;
 let s2 = "itソリ";;
 let s3 = "大阪市立図書館";;
+let s4 = "-";;
 
 (* あ -- \227 \129 \130
  * い -- \227 \129 \132
@@ -84,6 +85,7 @@ let mbcheck s =
             if n = String.length s then List.rev x
             else
                 let c = (Char.code s.[n]) in
+                (* print_endline ("char= " ^ (string_of_int c)); *)
                 if c >= 227 && sw = 0
                 then loop (n+1) (sw+1) (1::x) 
                 else
@@ -141,7 +143,7 @@ let mbsubstr s v n =
  * n 個の連続した s を求める関数
  *)
 let rec rep s n =
-    if n = 0 then s
+    if n = 1 then s
     else
         s ^ (rep s (n-1))
 
