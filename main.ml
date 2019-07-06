@@ -1,14 +1,16 @@
 (*
  * main.ml
  *
- * ocamlfind ocamlopt -o pmemo -linkpkg -package mysql,str type.ml myuty.ml readfile.ml disp.ml main.ml
+ * ocamlfind ocamlopt -o pmemo -linkpkg -package mysql,str type.ml myuty.ml len.ml readfile.ml disp.ml main.ml
  *)
+(*
 #load "readfile.cmo"
 #load "myuty.cmo"
 #load "mysql.cma"
 #load "type.cmo"
 #load "disp.cmo"
 #load "len.cmo"
+*)
 
 open Readfile
 open Myuty
@@ -16,6 +18,7 @@ open Printf
 open Mysql
 open Type
 open Disp
+open Len
 module P = Mysql.Prepared
 
 exception Out_of_loop
@@ -110,9 +113,9 @@ let rec select_loop t =
  * MySQLでデータをインサートする処理
  *)
 let insert_pmemo pm =
-  let sql = "insert into " ^ tablename ^ " (name, id, email, password, other) values (?, ?, ?, ?, ?)" in
+  let sql = "insert into " ^ tablename ^ " (name, email, id, password, other) values (?, ?, ?, ?, ?)" in
   let insert = P.create db sql in
-  ignore (P.execute insert [|pm.name; pm.id; pm.email; pm.password; pm.other|]);
+  ignore (P.execute insert [|pm.name; pm.email; pm.id; pm.password; pm.other|]);
   P.close insert
 
 
