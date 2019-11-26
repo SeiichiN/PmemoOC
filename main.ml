@@ -3,6 +3,7 @@
  *
  * ocamlfind ocamlopt -o pmemo -linkpkg -package mysql,str type.ml myuty.ml len.ml readfile.ml disp.ml main.ml
  *)
+(* utopの場合はこれをはずす *)
 (*
 #load "readfile.cmo"
 #load "myuty.cmo"
@@ -43,6 +44,22 @@ and tablename = assoc "tablename" conf
 let db = Mysql.quick_connect ~database:dbname
     ~user:username ~password:password ~host:hostname ()
 
+(* Table ga nakereba tukuru *)
+let table_check () =
+  let sql = "CREATE TABLE IF NOT EXISTS " ^ tablename
+            ^ " (no int NOT NULL AUTO_INCREMENT, "
+            ^ "name varchar(255), "
+            ^ "id varchar(255), "
+            ^ "email varchar(255), "
+            ^ "password varchar(255), "
+            ^ "other varchar(255), "
+            ^ "created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            ^ "PRIMARY KEY (no)) DEFAULT CHARSET=utf8"
+  in
+  Mysql.exec db sql
+    
+    
+    
 let count = ref 0
 
 (*
@@ -54,8 +71,9 @@ let read_table c =
     let sql = "select * from " ^ tablename in
     let r = exec c sql in
     let col = column r in
-    let row n x = { 
-        no         = n;
+    let row nn x = { 
+        no         = nn;
+        recno      = not_null int2ml (col ~key:"no" ~row:x);
         name       = not_null str2ml (col ~key:"name" ~row:x);
         id         = not_null str2ml (col ~key:"id" ~row:x);
         email      = not_null str2ml (col ~key:"email" ~row:x);
@@ -63,10 +81,10 @@ let read_table c =
         other      = not_null str2ml (col ~key:"other" ~row:x);
         created_at = not_null str2ml (col ~key:"created_at" ~row:x)
     } in
-    let rec loop n = function
+    let rec loop nn = function
         | None -> []
         | Some x -> 
-                row n x :: loop (n+1) (fetch r)
+                row nn x :: loop (nn+1) (fetch r)
     in
     loop 1 (fetch r)
 
@@ -93,12 +111,13 @@ let arr_to_rec r =
     count := !count + 1;
     let oneRecord = {
         no         = !count;
-        name       = not_null str2ml (Array.get r 0);
-        id         = not_null str2ml (Array.get r 1);
-        email      = not_null str2ml (Array.get r 2);
-        password   = not_null str2ml (Array.get r 3);
-        other      = not_null str2ml (Array.get r 4);
-        created_at = not_null str2ml (Array.get r 5)
+        recno      = not_null int2ml (Array.get r 0);
+        name       = not_null str2ml (Array.get r 1);
+        id         = not_null str2ml (Array.get r 2);
+        email      = not_null str2ml (Array.get r 3);
+        password   = not_null str2ml (Array.get r 4);
+        other      = not_null str2ml (Array.get r 5);
+        created_at = not_null str2ml (Array.get r 6)
     } in
     oneRecord
        
@@ -298,13 +317,14 @@ let select_menu () =
       | _ -> print_endline "?????"; n
 
 
-let _ = 
-    let rec loop () =
-        let n = select_menu () in
-        if n = 0
-        then ( disconnect db; ()) (* exit 0 *)
-        else loop ()
-    in
-    loop ()
+let _ =
+  table_check ();
+  let rec loop () =
+    let n = select_menu () in
+    if n = 0
+    then ( disconnect db; ()) (* exit 0 *)
+    else loop ()
+  in
+  loop ()
 
 

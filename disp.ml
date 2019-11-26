@@ -121,6 +121,7 @@ let make_new_pmemo () =
   and temp_other = get_user_input "other > " in
   let new_pmemo = {
     no = 0;
+    recno = 0;
     name = temp_name;
     id = temp_id;
     email = temp_email;

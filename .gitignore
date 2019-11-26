@@ -9,3 +9,6 @@ pmemo
 *.conflict.ml
 *.bak
 bak
+*~
+pmemo_org
+

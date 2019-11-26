@@ -1,6 +1,7 @@
 
 type pmemo = {
     mutable no : int;
+    mutable recno  : int;
     mutable name : string;
     mutable id   : string;
     mutable email : string;
