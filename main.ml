@@ -318,13 +318,13 @@ let select_menu () =
 
 
 let _ =
-  table_check ();
   let rec loop () =
     let n = select_menu () in
     if n = 0
     then ( disconnect db; ()) (* exit 0 *)
     else loop ()
   in
+  table_check(); (* this expression should have type unit *)
   loop ()
 
 
